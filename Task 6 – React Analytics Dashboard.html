@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Store Insights – React Dashboard</title>
+<style>
+:root{
+  --bg:#f3f4f9;--surface:#fff;--ink:#17182b;--muted:#63657d;--line:#e2e3ee;
+  --accent:#4f46e5;--c1:#4f46e5;--c2:#0ea5a4;--c3:#f59e0b;--c4:#ec4899;--ok:#16a34a;--bad:#dc2626;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1020;--surface:#191a30;--ink:#ececf8;--muted:#9fa1ba;--line:#2d2f4d;--accent:#8b85ff;--c1:#8b85ff;--c2:#2dd4bf;--c3:#fbbf24;--c4:#f472b6;--ok:#4ade80;--bad:#f87171}}
+:root[data-theme="dark"]{--bg:#0f1020;--surface:#191a30;--ink:#ececf8;--muted:#9fa1ba;--line:#2d2f4d;--accent:#8b85ff;--c1:#8b85ff;--c2:#2dd4bf;--c3:#fbbf24;--c4:#f472b6;--ok:#4ade80;--bad:#f87171}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px}
+.brand{font:800 1.25rem Georgia,serif;padding:4px 10px 18px;letter-spacing:-.02em}.brand b{color:var(--accent)}
+.nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;border-radius:10px;background:none;text-align:left;color:var(--muted);transition:background .2s,color .2s}
+.nav:hover{background:var(--bg);color:var(--ink)}
+.nav.on{background:var(--accent);color:#fff}
+.side small{margin-top:auto;color:var(--muted);padding:0 10px}
+.main{padding:22px 26px 40px;min-width:0}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:22px}
+.top h1{margin:0;font-size:1.5rem;font-family:Georgia,serif;letter-spacing:-.02em;margin-right:auto}
+.menu{display:none}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{border:0;background:none;padding:6px 14px;border-radius:8px;color:var(--muted);transition:all .2s}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;transition:border-color .2s}
+.btn:hover{border-color:var(--accent)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.btn[aria-pressed="true"] .dot{background:var(--ok);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.6)}100%{box-shadow:0 0 0 9px rgba(22,163,74,0)}}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:18px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;min-width:0;animation:in .45s both}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.stat{display:flex;justify-content:space-between;align-items:flex-end;transition:transform .2s,box-shadow .2s}
+.stat:hover{transform:translateY(-3px);box-shadow:0 12px 24px -16px rgba(79,70,229,.6)}
+.stat span{color:var(--muted);font-size:.88rem}
+.stat b{display:block;font-size:1.65rem;line-height:1.2;margin:2px 0}
+.delta{font-size:.85rem;font-weight:600}.delta.up{color:var(--ok)}.delta.down{color:var(--bad)}
+.row{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.row.eq{grid-template-columns:1fr 1.4fr}
+.ph{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:12px}
+.ph h2{margin:0;font-size:1.05rem}.ph p{margin:0;color:var(--muted);font-size:.85rem}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto}
+.tip{position:absolute;top:6px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:6px 10px;border-radius:8px;font-size:.82rem;pointer-events:none;white-space:nowrap}
+.tip small{display:block;opacity:.7}
+.axis{font-size:11px;fill:var(--muted)}
+.legend{display:grid;gap:8px;margin-top:10px}
+.legend div{display:flex;align-items:center;gap:8px;font-size:.9rem}
+.legend i{width:11px;height:11px;border-radius:3px}.legend span:last-child{margin-left:auto;color:var(--muted)}
+.donut{display:grid;place-items:center;position:relative}
+.donut div{position:absolute;text-align:center}.donut div b{display:block;font-size:1.3rem}.donut div span{font-size:.8rem;color:var(--muted)}
+.bars{display:grid;gap:14px}
+.bar label{display:flex;justify-content:space-between;font-size:.9rem;margin-bottom:4px}
+.track{height:10px;background:var(--bg);border-radius:99px;overflow:hidden}
+.track i{display:block;height:100%;border-radius:99px;background:var(--c2);transition:width .6s cubic-bezier(.2,.7,.2,1)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.tools input,.tools select{padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.tools input{flex:1;min-width:160px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:620px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+th button{border:0;background:none;font-weight:600;color:var(--muted)}th button:hover{color:var(--ink)}
+tbody tr{transition:background .15s}tbody tr:hover{background:var(--bg)}
+tr.new{animation:flash 1.6s}@keyframes flash{from{background:color-mix(in srgb,var(--ok) 25%,transparent)}}
+.pill{padding:3px 10px;border-radius:99px;font-size:.8rem;font-weight:600;background:var(--bg)}
+.pill.Delivered{color:var(--ok)}.pill.Shipped{color:var(--c1)}.pill.Pending{color:var(--c3)}.pill.Cancelled{color:var(--bad)}
+.pg{display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:var(--muted);font-size:.88rem}
+.pg button{padding:6px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.pg button:disabled{opacity:.4;cursor:default}
+@media (max-width:1000px){.row,.row.eq{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;z-index:30;left:0;top:0;width:250px;transform:translateX(-100%);transition:transform .3s;padding-top:calc(20px + env(safe-area-inset-top,0px))}
+  .side.open{transform:none;box-shadow:0 0 0 100vmax rgba(10,10,20,.5)}
+  .menu{display:inline-flex}.main{padding:16px 14px 32px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script>
+(function(){
+const {useState,useMemo,useEffect,useReducer}=React, h=React.createElement;
+const money=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const short=n=>n>=1e7?(n/1e7).toFixed(2)+' Cr':n>=1e5?(n/1e5).toFixed(2)+' L':n>=1e3?(n/1e3).toFixed(1)+'K':String(Math.round(n));
+const dmy=t=>new Date(t).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- data layer (simulated data source) ---------- */
+const DAY=864e5, NOW=Date.now(), N=180;
+const PRODUCTS=[['Aero Earbuds',2499,.24],['Pulse Smartwatch',3999,.2],['Trail Shoes',2999,.17],['Volt Power Bank',1499,.14],['Yoga Mat Pro',1199,.13],['Steel Bottle',699,.12]];
+const CATS=[['Electronics',.38,'var(--c1)'],['Fashion',.24,'var(--c2)'],['Home',.2,'var(--c3)'],['Fitness',.18,'var(--c4)']];
+const NAMES=['Priya S','Arjun K','Meena R','Karthik V','Divya M','Suresh P','Anitha L','Rahul D','Lakshmi N','Vijay T','Sneha B','Manoj G'];
+const STATUS=['Delivered','Delivered','Delivered','Shipped','Pending','Cancelled'];
+function makeDays(){const r=rng(11);return Array.from({length:N},(_,i)=>{
+  const rev=42000+i*140+9000*Math.sin(i/7*Math.PI*2)+(r()-.5)*16000,orders=Math.round(rev/(1750+r()*500)),visitors=Math.round(orders*(26+r()*9));
+  return {ts:NOW-(N-1-i)*DAY,rev:Math.round(rev),orders,visitors}})}
+function makeOrders(){const r=rng(5);return Array.from({length:60},(_,i)=>{
+  const p=PRODUCTS[Math.floor(r()*PRODUCTS.length)],q=1+Math.floor(r()*3);
+  return {id:'#'+(5060-i),customer:NAMES[Math.floor(r()*NAMES.length)],product:p[0],ts:NOW-Math.floor(r()*30*DAY),amount:p[1]*q,status:STATUS[Math.floor(r()*STATUS.length)]}}).sort((a,b)=>b.ts-a.ts)}
+function metrics(days,n){
+  const cur=days.slice(-n),prev=days.slice(-2*n,-n),sum=(a,k)=>a.reduce((t,d)=>t+d[k],0);
+  const rev=sum(cur,'rev'),ord=sum(cur,'orders'),vis=sum(cur,'visitors'),pr=sum(prev,'rev'),po=sum(prev,'orders'),pv=sum(prev,'visitors');
+  const cv=ord/vis*100,pcv=po/pv*100,pc=(a,b)=>(a-b)/b*100;
+  return {cur,rev,ord,vis,cv,d:{rev:pc(rev,pr),ord:pc(ord,po),vis:pc(vis,pv),cv:cv-pcv}};
+}
+
+/* ---------- state management ---------- */
+function init(){return {days:makeDays(),orders:makeOrders(),range:30,live:false,view:'overview',menu:false,fresh:0,
+  theme:matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}}
+function reducer(s,a){switch(a.t){
+  case 'range':return {...s,range:a.v};
+  case 'live':return {...s,live:!s.live};
+  case 'theme':return {...s,theme:s.theme==='dark'?'light':'dark'};
+  case 'view':return {...s,view:a.v,menu:false};
+  case 'menu':return {...s,menu:!s.menu};
+  case 'tick':{const p=PRODUCTS[Math.floor(Math.random()*PRODUCTS.length)],q=1+Math.floor(Math.random()*2),amt=p[1]*q;
+    const days=s.days.slice(),l={...days[days.length-1]};l.rev+=amt;l.orders+=1;l.visitors+=20+Math.floor(Math.random()*25);days[days.length-1]=l;
+    const o={id:'#'+(5061+s.fresh),customer:NAMES[Math.floor(Math.random()*NAMES.length)],product:p[0],ts:Date.now(),amount:amt,status:'Pending'};
+    return {...s,days,orders:[o,...s.orders].slice(0,200),fresh:s.fresh+1}}
+  default:return s}}
+
+/* ---------- reusable components ---------- */
+const Panel=({title,sub,right,children,cls})=>h('section',{className:'panel '+(cls||'')},
+  (title||right)&&h('div',{className:'ph'},h('div',null,h('h2',null,title),sub&&h('p',null,sub)),right),children);
+const Seg=({opts,val,onChange,label})=>h('div',{className:'seg',role:'group','aria-label':label},
+  opts.map(o=>h('button',{key:o[0],'aria-pressed':o[0]===val,onClick:()=>onChange(o[0])},o[1])));
+function Spark({data,up}){const W=90,H=30,mx=Math.max(...data),mn=Math.min(...data);
+  const pts=data.map((v,i)=>(i/(data.length-1)*W).toFixed(1)+','+(H-2-(v-mn)/(mx-mn||1)*(H-4)).toFixed(1)).join(' ');
+  return h('svg',{viewBox:'0 0 '+W+' '+H,width:90,height:30,'aria-hidden':true},h('polyline',{points:pts,fill:'none',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round',style:{stroke:up?'var(--ok)':'var(--bad)'}}))}
+function StatCard({label,value,delta,unit,data}){const up=delta>=0;
+  return h('div',{className:'panel stat'},h('div',null,h('span',null,label),h('b',null,value),
+    h('span',{className:'delta '+(up?'up':'down')},(up?'▲ ':'▼ ')+Math.abs(delta).toFixed(1)+(unit||'%')+' vs previous')),h(Spark,{data,up}))}
+function AreaChart({data,labels,fmt,color}){
+  const W=720,H=270,p={l:50,r:14,t:14,b:28},iw=W-p.l-p.r,ih=H-p.t-p.b,n=data.length,[hv,setHv]=useState(null);
+  const max=Math.max(...data)*1.1,x=i=>p.l+iw*i/(n-1),y=v=>p.t+ih*(1-v/max);
+  const line=data.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join(' ');
+  const area=line+' L'+x(n-1)+' '+(p.t+ih)+' L'+p.l+' '+(p.t+ih)+'Z',step=Math.ceil(n/6);
+  const move=e=>{const r=e.currentTarget.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;setHv(Math.max(0,Math.min(n-1,Math.round((px-p.l)/iw*(n-1)))))};
+  return h('div',{className:'chart'},
+    h('svg',{viewBox:'0 0 '+W+' '+H,role:'img','aria-label':'Trend chart',onMouseMove:move,onMouseLeave:()=>setHv(null)},
+      h('defs',null,h('linearGradient',{id:'ag',x1:0,y1:0,x2:0,y2:1},h('stop',{offset:'0%',style:{stopColor:color,stopOpacity:.35}}),h('stop',{offset:'100%',style:{stopColor:color,stopOpacity:0}}))),
+      [0,.25,.5,.75,1].map(t=>h('g',{key:t},h('line',{x1:p.l,x2:W-p.r,y1:p.t+ih*(1-t),y2:p.t+ih*(1-t),style:{stroke:'var(--line)'}}),h('text',{className:'axis',x:p.l-8,y:p.t+ih*(1-t)+4,textAnchor:'end'},short(max/1.1*t)))),
+      labels.map((l,i)=>i%step===0&&h('text',{key:i,className:'axis',x:x(i),y:H-8,textAnchor:'middle'},l)),
+      h('path',{d:area,fill:'url(#ag)'}),h('path',{d:line,fill:'none',strokeWidth:2.5,strokeLinejoin:'round',style:{stroke:color}}),
+      hv!==null&&h('g',null,h('line',{x1:x(hv),x2:x(hv),y1:p.t,y2:p.t+ih,style:{stroke:'var(--muted)'},strokeDasharray:'4 4'}),h('circle',{cx:x(hv),cy:y(data[hv]),r:5,style:{fill:color,stroke:'var(--surface)'},strokeWidth:2}))),
+    hv!==null&&h('div',{className:'tip',style:{left:Math.min(88,Math.max(12,x(hv)/W*100))+'%'}},h('small',null,labels[hv]),fmt(data[hv])));
+}
+function Donut({items}){const R=64,C=2*Math.PI*R,tot=items.reduce((t,i)=>t+i.value,0);let off=0;
+  return h('div',null,h('div',{className:'donut'},
+    h('svg',{viewBox:'0 0 180 180',width:180,height:180,role:'img','aria-label':'Sales by category'},
+      h('circle',{cx:90,cy:90,r:R,fill:'none',strokeWidth:22,style:{stroke:'var(--bg)'}}),
+      items.map(i=>{const len=i.value/tot*C,el=h('circle',{key:i.name,cx:90,cy:90,r:R,fill:'none',strokeWidth:22,strokeDasharray:len+' '+(C-len),strokeDashoffset:-off,transform:'rotate(-90 90 90)',style:{stroke:i.color,transition:'stroke-dasharray .6s'}});off+=len;return el})),
+    h('div',null,h('b',null,'₹'+short(tot)),h('span',null,'total sales'))),
+    h('div',{className:'legend'},items.map(i=>h('div',{key:i.name},h('i',{style:{background:i.color}}),h('span',null,i.name),h('span',null,Math.round(i.value/tot*100)+'%')))))}
+function BarList({items}){const mx=Math.max(...items.map(i=>i.value));
+  return h('div',{className:'bars'},items.map(i=>h('div',{className:'bar',key:i.name},h('label',null,h('span',null,i.name),h('b',null,money(i.value))),h('div',{className:'track'},h('i',{style:{width:i.value/mx*100+'%'}})))))}
+function OrdersTable({orders,fresh}){
+  const [q,setQ]=useState(''),[st,setSt]=useState('All'),[sort,setSort]=useState({k:'ts',d:-1}),[pg,setPg]=useState(0);
+  const rows=useMemo(()=>orders.filter(o=>(st==='All'||o.status===st)&&(o.id+o.customer+o.product).toLowerCase().includes(q.toLowerCase()))
+    .sort((a,b)=>(a[sort.k]>b[sort.k]?1:a[sort.k]<b[sort.k]?-1:0)*sort.d),[orders,q,st,sort]);
+  const per=8,pages=Math.max(1,Math.ceil(rows.length/per)),page=Math.min(pg,pages-1),view=rows.slice(page*per,page*per+per);
+  const cols=[['id','Order'],['customer','Customer'],['product','Product'],['ts','Date'],['amount','Amount'],['status','Status']];
+  return h('div',null,
+    h('div',{className:'tools'},h('input',{type:'search',placeholder:'Search orders…','aria-label':'Search orders',value:q,onChange:e=>{setQ(e.target.value);setPg(0)}}),
+      h('select',{'aria-label':'Filter by status',value:st,onChange:e=>{setSt(e.target.value);setPg(0)}},['All','Delivered','Shipped','Pending','Cancelled'].map(s=>h('option',{key:s},s)))),
+    h('div',{className:'tw'},h('table',null,
+      h('thead',null,h('tr',null,cols.map(c=>h('th',{key:c[0]},h('button',{onClick:()=>setSort(s=>({k:c[0],d:s.k===c[0]?-s.d:1}))},c[1]+(sort.k===c[0]?(sort.d>0?' ↑':' ↓'):'')))))),
+      h('tbody',null,view.length?view.map((o,i)=>h('tr',{key:o.id,className:o.id==='#'+(5060+fresh)&&fresh?'new':''},
+        h('td',null,o.id),h('td',null,o.customer),h('td',null,o.product),h('td',null,dmy(o.ts)),h('td',null,money(o.amount)),h('td',null,h('span',{className:'pill '+o.status},o.status)))):
+        h('tr',null,h('td',{colSpan:6,style:{textAlign:'center',color:'var(--muted)',padding:30}},'No orders match your search.'))))),
+    h('div',{className:'pg'},h('span',null,rows.length+' orders · page '+(page+1)+' of '+pages),
+      h('span',null,h('button',{disabled:page===0,onClick:()=>setPg(page-1)},'Previous'),' ',h('button',{disabled:page>=pages-1,onClick:()=>setPg(page+1)},'Next'))))}
+
+/* ---------- app ---------- */
+const NAV=[['overview','▦','Overview'],['sales','📈','Sales'],['orders','🧾','Orders']];
+function App(){
+  const [s,d]=useReducer(reducer,null,init),[metric,setMetric]=useState('rev');
+  useEffect(()=>{document.documentElement.setAttribute('data-theme',s.theme)},[s.theme]);
+  useEffect(()=>{if(!s.live)return;const id=setInterval(()=>d({t:'tick'}),2500);return()=>clearInterval(id)},[s.live]);
+  const m=useMemo(()=>metrics(s.days,s.range),[s.days,s.range]);
+  const cats=CATS.map(c=>({name:c[0],value:m.rev*c[1],color:c[2]})),prods=PRODUCTS.map(p=>({name:p[0],value:m.rev*p[2]}));
+  const labels=m.cur.map(x=>dmy(x.ts)),fm={rev:money,orders:v=>Math.round(v)+' orders',visitors:v=>Math.round(v).toLocaleString('en-IN')+' visitors'};
+  const col={rev:'var(--c1)',orders:'var(--c2)',visitors:'var(--c4)'};
+  const v=s.view,show=(k)=>v==='overview'||v===k;
+  const titles={overview:'Overview',sales:'Sales analytics',orders:'Orders'};
+  return h('div',{className:'app'},
+    h('aside',{className:'side'+(s.menu?' open':'')},h('div',{className:'brand'},'Store',h('b',null,' Insights')),
+      NAV.map(n=>h('button',{key:n[0],className:'nav'+(v===n[0]?' on':''),'aria-current':v===n[0]?'page':undefined,onClick:()=>d({t:'view',v:n[0]})},h('span',{'aria-hidden':true},n[1]),n[2])),
+      h('small',null,'Demo data · built with React')),
+    h('main',{className:'main'},
+      h('div',{className:'top'},h('button',{className:'btn menu','aria-label':'Toggle menu',onClick:()=>d({t:'menu'})},'☰'),h('h1',null,titles[v]),
+        h(Seg,{label:'Date range',opts:[[7,'7D'],[30,'30D'],[90,'90D']],val:s.range,onChange:x=>d({t:'range',v:x})}),
+        h('button',{className:'btn','aria-pressed':s.live,onClick:()=>d({t:'live'})},h('span',{className:'dot'}),s.live?'Live':'Go live'),
+        h('button',{className:'btn','aria-label':'Switch theme',onClick:()=>d({t:'theme'})},'◐')),
+      v!=='orders'&&h('div',{className:'stats'},
+        h(StatCard,{label:'Revenue',value:money(m.rev),delta:m.d.rev,data:m.cur.map(x=>x.rev)}),
+        h(StatCard,{label:'Orders',value:m.ord.toLocaleString('en-IN'),delta:m.d.ord,data:m.cur.map(x=>x.orders)}),
+        h(StatCard,{label:'Visitors',value:m.vis.toLocaleString('en-IN'),delta:m.d.vis,data:m.cur.map(x=>x.visitors)}),
+        h(StatCard,{label:'Conversion',value:m.cv.toFixed(2)+'%',delta:m.d.cv,unit:' pts',data:m.cur.map(x=>x.orders/x.visitors*100)})),
+      v!=='orders'&&h('div',{className:'row'},
+        h(Panel,{title:'Performance',sub:'Last '+s.range+' days · hover the chart for details',right:h(Seg,{label:'Metric',opts:[['rev','Revenue'],['orders','Orders'],['visitors','Visitors']],val:metric,onChange:setMetric})},
+          h(AreaChart,{key:metric+s.range,data:m.cur.map(x=>x[metric]),labels,fmt:fm[metric],color:col[metric]})),
+        h(Panel,{title:'Sales by category'},h(Donut,{items:cats}))),
+      v!=='orders'&&v!=='sales'&&h('div',{className:'row eq'},
+        h(Panel,{title:'Top products',sub:'By revenue'},h(BarList,{items:prods})),
+        h(Panel,{title:'Recent orders',sub:s.live?'Updating live':'Search, sort and filter'},h(OrdersTable,{orders:s.orders,fresh:s.fresh}))),
+      v==='sales'&&h(Panel,{title:'Top products',sub:'By revenue'},h(BarList,{items:prods})),
+      v==='orders'&&h(Panel,{title:'All orders',sub:s.orders.length+' in the last 30 days'},h(OrdersTable,{orders:s.orders,fresh:s.fresh}))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>
